@@ -173,7 +173,7 @@ def get_source_dir() -> Path:
     for c in candidates:
         if c.exists() and c.is_dir():
             return c
-    return candidates[0]
+    return base
 
 
 def main(source_dir: str | None = None):
@@ -186,7 +186,7 @@ def main(source_dir: str | None = None):
 
     pdf_files = list(source_path.glob("*.pdf"))
     if not pdf_files:
-        print("No PDF files found in", source_dir)
+        print(f"Notice: No loose PDF files found to sort in {source_dir}.")
         return
 
     counts: dict[str, int] = {}

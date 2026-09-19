@@ -178,15 +178,27 @@ def extract_invoice_data(pdf_path: str) -> dict:
     }
 
 
-def main():
-    # Find all PDF files in the current directory (non-recursive for simplicity)
-    pdf_files = [f for f in os.listdir('.') if f.lower().endswith('.pdf')]
-    print(f"Found {len(pdf_files)} PDF files")
+def main(source_dir=None):
+    import sys
+    if source_dir is None:
+        if len(sys.argv) > 1:
+            source_dir = sys.argv[1]
+        elif os.path.isdir("SpiceJet"):
+            source_dir = "SpiceJet"
+        else:
+            source_dir = "."
+    pdf_files = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if f.lower().endswith('.pdf')]
+    print(f"Found {len(pdf_files)} PDF files in {source_dir}")
     results = []
     for pdf in sorted(pdf_files):
         print(f"Processing {pdf}...")
         try:
-            results.append(extract_invoice_data(pdf))
+            res = extract_invoice_data(pdf)
+            # Only record if it has basic invoice data
+            if res.get("invoice_no") or res.get("supplier_gstin"):
+                results.append(res)
+            else:
+                print(f"  Skipped non-SpiceJet/unmatched file: {pdf}")
         except Exception as e:
             print(f"  Error on {pdf}: {e}")
     if results:
@@ -194,7 +206,7 @@ def main():
         df.to_excel("spicejet_invoices_extracted.xlsx", index=False)
         print(f"Written {len(results)} records to spicejet_invoices_extracted.xlsx")
     else:
-        print("No data extracted.")
+        print("No SpiceJet invoice data extracted.")
 
 
 if __name__ == "__main__":

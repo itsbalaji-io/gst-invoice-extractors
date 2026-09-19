@@ -44,10 +44,10 @@ def extract_invoice_data(pdf_path: str) -> dict:
     inv_match = re.search(r"Invoice Number\s*[:]\s*([A-Z0-9]+)", text, re.I)
     if inv_match:
         result["invoice_no"] = inv_match.group(1).strip()
-    date_match = re.search(r"Invoice Date\s*[:]\s*(\d{2}/\d{2}/\d{4})", text, re.I)
+    date_match = re.search(r"(?:Invoice|Debit Note|Credit Note)\s*Date\s*[:]\s*(\d{2}[\/\-]\d{2}[\/\-]\d{4})", text, re.I)
     if date_match:
         dt = date_match.group(1).strip()
-        parts = dt.split('/')
+        parts = re.split(r'[\/\-]', dt)
         if len(parts) == 3:
             result["invoice_date"] = f"{parts[0]}-{parts[1]}-{parts[2]}"
         else:
@@ -156,11 +156,11 @@ def extract_invoice_data(pdf_path: str) -> dict:
                     col_map['net_taxable_value'] = idx
                 elif "GST %" in up:
                     col_map['gst_percent'] = idx
-                elif "CGST" in up and "0%" in up:
+                elif "CGST" in up:
                     col_map['cgst_percent'] = idx
                 elif "SGST" in up or "UTGST" in up:
                     col_map['sgst_percent'] = idx
-                elif "IGST" in up and "%" in up:
+                elif "IGST" in up:
                     col_map['igst_percent'] = idx
                 elif "TOTAL VALUE" in up:
                     col_map['total_value'] = idx
@@ -316,9 +316,17 @@ def extract_invoice_data(pdf_path: str) -> dict:
     return result
 
 
-def main():
-    pdf_files = [f for f in os.listdir('.') if f.lower().endswith('.pdf')]
-    print(f"Found {len(pdf_files)} PDF files")
+def main(source_dir=None):
+    import sys
+    if source_dir is None:
+        if len(sys.argv) > 1:
+            source_dir = sys.argv[1]
+        elif os.path.isdir('Air_India'):
+            source_dir = 'Air_India'
+        else:
+            source_dir = '.'
+    pdf_files = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if f.lower().endswith('.pdf')]
+    print(f"Found {len(pdf_files)} PDF files in {source_dir}")
     results = []
     for pdf in sorted(pdf_files):
         print(f"Processing {pdf}...")
@@ -333,7 +341,7 @@ def main():
                 "voucher_type", "passenger_name",
                 "taxable_value", "non_taxable_exempted", "igst_amount", "cgst_amount", "sgst_amount", "grand_total"]
         df = df[cols]
-        output_file = "airindia_express_invoices_extracted.xlsx"
+        output_file = "airindia_invoices_extracted.xlsx"
         df.to_excel(output_file, index=False)
         print(f"Written {len(results)} records to {output_file}")
         print(df.to_string())

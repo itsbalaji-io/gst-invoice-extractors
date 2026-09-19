@@ -1,28 +1,21 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments
-.env
-.venv
+# Invoices and Data Files (Personal / Financial data)
+*.pdf
+*.xlsx
+extracted_data/
+Indigo/
+Air_India/
+Air_India_Express/
+
+# Environment and IDE
+.venv/
 env/
 venv/
-ENV/
-
-# Data files & invoices
-*.pdf
-*.PDF
-*.xlsx
-*.xls
-*.csv
-output/
-invoices/
-temp/
-logs/
-
-# IDE / OS specific
+.idea/
+.vscode/
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/

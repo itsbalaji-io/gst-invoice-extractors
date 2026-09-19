@@ -37,7 +37,11 @@ def find_source_dir() -> Path:
     for c in candidates:
         if c.exists() and c.is_dir():
             return c
-    return candidates[0]  # fallback - will error in main()
+    if any(Path.cwd().glob("*.pdf")):
+        return Path.cwd()
+    if any(Path(__file__).parent.glob("*.pdf")):
+        return Path(__file__).parent
+    return Path.cwd()
 
 def get_args():
     parser = argparse.ArgumentParser(description="Extract GST data from airline invoice PDFs")
@@ -262,7 +266,8 @@ def main() -> int:
 
     # Check if flat mode or organized folders
     pdf_files = list(source_dir.glob("*.pdf"))
-    airline_folders = [d for d in source_dir.iterdir() if d.is_dir() and d.name not in ("Unclassified", "__pycache__")]
+    ignore_dirs = {"Unclassified", "__pycache__", "extracted_data", "scratch", ".system_generated", "expired", "Expired"}
+    airline_folders = [d for d in source_dir.iterdir() if d.is_dir() and d.name not in ignore_dirs and not d.name.startswith(".")]
 
     all_results = []
 

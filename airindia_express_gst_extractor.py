@@ -442,9 +442,17 @@ def extract_invoice_data(pdf_path: str) -> dict:
     return result
 
 
-def main():
-    pdf_files = [f for f in os.listdir('.') if f.lower().endswith('.pdf')]
-    print(f"Found {len(pdf_files)} PDF files")
+def main(source_dir=None):
+    import sys
+    if source_dir is None:
+        if len(sys.argv) > 1:
+            source_dir = sys.argv[1]
+        elif os.path.isdir('Air_India_Express'):
+            source_dir = 'Air_India_Express'
+        else:
+            source_dir = '.'
+    pdf_files = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if f.lower().endswith('.pdf')]
+    print(f"Found {len(pdf_files)} PDF files in {source_dir}")
     results = []
     for pdf in sorted(pdf_files):
         print(f"Processing {pdf}...")

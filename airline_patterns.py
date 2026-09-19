@@ -174,5 +174,4 @@ def get_source_dir() -> Path:
     for c in candidates:
         if c.exists() and c.is_dir():
             return c
-    # Fallback: return first candidate (will show error in main)
-    return candidates[0]
+    return base

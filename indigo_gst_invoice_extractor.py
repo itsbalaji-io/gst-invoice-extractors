@@ -143,9 +143,18 @@ def extract_invoice_data(pdf_path: str) -> dict:
     }
 
 
-def main():
-    pdf_files = glob.glob("*.pdf")
-    print(f"Found {len(pdf_files)} PDF files")
+def main(source_dir=None):
+    import sys
+    import os
+    if source_dir is None:
+        if len(sys.argv) > 1:
+            source_dir = sys.argv[1]
+        elif os.path.isdir("Indigo"):
+            source_dir = "Indigo"
+        else:
+            source_dir = "."
+    pdf_files = [os.path.join(source_dir, f) for f in os.listdir(source_dir) if f.lower().endswith(".pdf")]
+    print(f"Found {len(pdf_files)} PDF files in {source_dir}")
     results = []
     valid_count = 0
     skipped_count = 0
@@ -163,8 +172,9 @@ def main():
             print(f"  Error on {pdf}: {e}")
     if results:
         df = pd.DataFrame(results)
-        df.to_excel("all_invoices_extracted.xlsx", index=False)
-        print(f"Written {valid_count} valid invoice records to all_invoices_extracted.xlsx")
+        out_file = "indigo_invoices_extracted.xlsx"
+        df.to_excel(out_file, index=False)
+        print(f"Written {valid_count} valid invoice records to {out_file}")
         print(f"Skipped {skipped_count} non-invoice files")
     else:
         print("No valid invoice data extracted.")
