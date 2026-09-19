@@ -84,18 +84,16 @@ GST_PATTERNS = {
 
 def extract_text_with_fallback(pdf_path: Path) -> tuple[str, str]:
     """
-    Extract text: pdfplumber only (fast). Skip OCR for speed.
+    Extract text: PyMuPDF primary with pdfplumber fallback.
     Returns (text, method_used).
     """
     try:
         text = extract_text_pdfplumber(pdf_path)
-        if text and len(text.strip()) > 100:
-            return text, "pdfplumber"
+        if text and len(text.strip()) > 50:
+            return text, "PyMuPDF/pdfplumber"
     except Exception as e:
-        # Log font warnings but continue
         pass
 
-    # Skip OCR - return empty for image-only PDFs
     return "", "skipped_image_only"
 
 

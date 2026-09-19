@@ -7,7 +7,7 @@ A comprehensive suite of Python scripts and automation utilities to classify, so
 ### 1. Master Batch Runner
 - **`run_gst_extraction.bat`**: Windows one-click automated pipeline.
   - Automatically verifies Python installation (prompts permission to install via winget if missing).
-  - Checks pip and required packages (`pdfplumber`, `openpyxl`, `pandas`), prompting permission to install if missing.
+  - Checks pip and required packages (`pymupdf`, `pdfplumber`, `openpyxl`, `pandas`), prompting permission to install if missing.
   - Provides an interactive execution menu: Full Pipeline (Default), Sort Only, Airline-Specific Excels Only, or Unified Summary.
 
 ### 2. Multi-Airline Unified Extractor
@@ -36,7 +36,7 @@ The batch runner will automatically check Python, ask permission to install any 
 
 1. **Install dependencies**:
 ```bash
-pip install pdfplumber openpyxl pandas
+pip install pymupdf pdfplumber openpyxl pandas
 ```
 
 2. **Sort raw invoices into airline folders**:

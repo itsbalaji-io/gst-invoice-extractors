@@ -95,8 +95,19 @@ AirlineName = Literal[
 
 
 def extract_text_pdfplumber(pdf_path: Path) -> str:
-    """Fast text extraction using pdfplumber."""
+    """Ultra-fast text extraction using PyMuPDF (primary) with pdfplumber fallback."""
     try:
+        import fitz
+        doc = fitz.open(str(pdf_path))
+        text = "\n".join(page.get_text() or "" for page in doc)
+        doc.close()
+        if text and len(text.strip()) > 30:
+            return text
+    except Exception:
+        pass
+
+    try:
+        import pdfplumber
         text_parts = []
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:

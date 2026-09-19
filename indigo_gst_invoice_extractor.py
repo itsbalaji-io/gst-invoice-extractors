@@ -11,9 +11,21 @@ import pdfplumber
 
 
 def _text_from_pdf(pdf_path: str) -> str:
-    """Return all text from PDF pages concatenated with newlines."""
-    with pdfplumber.open(pdf_path) as pdf:
-        return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    """Return all text from PDF pages (PyMuPDF primary with pdfplumber fallback)."""
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        text = "\n".join(page.get_text() or "" for page in doc)
+        doc.close()
+        if text and len(text.strip()) > 30:
+            return text
+    except Exception:
+        pass
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    except Exception:
+        return ""
 
 
 def _first_match(pattern: str, text: str, flags=0):
@@ -72,44 +84,59 @@ def extract_invoice_data(pdf_path: str) -> dict:
     to_loc = _first_match(r"To:\s*([A-Z]+)", text, re.I)
     voucher_type = _first_match(r"(Tax Invoice|Credit Note|Debit Note|Revised Invoice|Supplementary Invoice|Bill of Supply|Delivery Challan|GST Credit Note)", text, re.I)
 
-    # Tax breakup – try table first, fallback to regex
+    # Tax breakup – try table first (PyMuPDF with pdfplumber fallback), fallback to regex
     taxable_value = non_taxable = igst_amt = cgst_amt = sgst_amt = grand_total = ""
+    tables = []
     try:
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                for table in page.extract_tables() or []:
-                    for row in table:
-                        if not row:
-                            continue
-                        # Check for Grand Total row (summary row with different column structure)
-                        if any('Grand Total' in str(cell) for cell in row if cell):
-                            def _cell(i):
-                                return row[i] if i < len(row) and row[i] else ""
-                            # Grand Total row: 0='', 1='Grand Total', 2=Taxable, 3=NonTaxable,
-                            # 5=IGST Amt, 7=CGST Amt, 9=SGST Amt, 11=Grand Total
-                            taxable_value = _cell(2).strip()
-                            non_taxable = _cell(3).strip()
-                            igst_amt = _cell(5).strip()
-                            cgst_amt = _cell(7).strip()
-                            sgst_amt = _cell(9).strip()
-                            grand_total = _cell(11).strip()
-                        # Also check data rows for tax amounts (in case Grand Total row not found)
-                        elif len(row) >= 12 and row[0] and 'Air Travel' in str(row[0]):
-                            def _cell(i):
-                                return row[i] if i < len(row) and row[i] else ""
-                            # Data row: 2=Taxable, 3=NonTaxable, 6=IGST Amt, 8=CGST Amt, 10=SGST Amt, 11=Total
-                            if not taxable_value:
-                                taxable_value = _cell(2).strip()
-                            if not non_taxable:
-                                non_taxable = _cell(3).strip()
-                            if not igst_amt:
-                                igst_amt = _cell(6).strip()
-                            if not cgst_amt:
-                                cgst_amt = _cell(8).strip()
-                            if not sgst_amt:
-                                sgst_amt = _cell(10).strip()
+        import fitz
+        doc = fitz.open(pdf_path)
+        for page in doc:
+            for t in page.find_tables():
+                tables.append(t.extract())
+        doc.close()
     except Exception:
         pass
+
+    if not tables:
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    for t in page.extract_tables() or []:
+                        tables.append(t)
+        except Exception:
+            pass
+
+    for table in tables:
+        for row in table:
+            if not row:
+                continue
+            # Check for Grand Total row (summary row with different column structure)
+            if any('Grand Total' in str(cell) for cell in row if cell):
+                def _cell(i):
+                    return row[i] if i < len(row) and row[i] else ""
+                # Grand Total row: 0='', 1='Grand Total', 2=Taxable, 3=NonTaxable,
+                # 5=IGST Amt, 7=CGST Amt, 9=SGST Amt, 11=Grand Total
+                taxable_value = _cell(2).strip()
+                non_taxable = _cell(3).strip()
+                igst_amt = _cell(5).strip()
+                cgst_amt = _cell(7).strip()
+                sgst_amt = _cell(9).strip()
+                grand_total = _cell(11).strip()
+            # Also check data rows for tax amounts (in case Grand Total row not found)
+            elif len(row) >= 12 and row[0] and 'Air Travel' in str(row[0]):
+                def _cell(i):
+                    return row[i] if i < len(row) and row[i] else ""
+                # Data row: 2=Taxable, 3=NonTaxable, 6=IGST Amt, 8=CGST Amt, 10=SGST Amt, 11=Total
+                if not taxable_value:
+                    taxable_value = _cell(2).strip()
+                if not non_taxable:
+                    non_taxable = _cell(3).strip()
+                if not igst_amt:
+                    igst_amt = _cell(6).strip()
+                if not cgst_amt:
+                    cgst_amt = _cell(8).strip()
+                if not sgst_amt:
+                    sgst_amt = _cell(10).strip()
 
     if not grand_total:
         grand_total = _first_match(r"Grand Total[\s₹]*([0-9,]+(?:\.[0-9]+)?)", text, re.I)

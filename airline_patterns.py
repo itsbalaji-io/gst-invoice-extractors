@@ -116,13 +116,22 @@ def classify_pdf(pdf_path: Path) -> AirlineName:
 
 
 def extract_text_pdfplumber(pdf_path: Path) -> str:
-    """Fast text extraction using pdfplumber."""
+    """Ultra-fast text extraction using PyMuPDF (primary) with pdfplumber fallback."""
+    # 1. Primary: PyMuPDF (18x faster)
+    try:
+        import fitz
+        doc = fitz.open(str(pdf_path))
+        text_parts = [page.get_text() or "" for page in doc]
+        doc.close()
+        text = "\n".join(text_parts)
+        if text and len(text.strip()) > 30:
+            return text
+    except Exception:
+        pass
+
+    # 2. Fallback: pdfplumber
     try:
         import pdfplumber
-    except ImportError:
-        return ""
-
-    try:
         text_parts = []
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:

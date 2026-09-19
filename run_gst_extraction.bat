@@ -93,23 +93,23 @@ echo.
 REM ------------------------------------------------------------
 REM [3/4] Check and Prompt for Required Python Libraries
 REM ------------------------------------------------------------
-echo [Step 3/4] Checking required dependencies (pdfplumber, openpyxl, pandas)...
-%PY_CMD% -c "import pdfplumber, openpyxl, pandas" >nul 2>&1
+echo [Step 3/4] Checking required dependencies (pymupdf, pdfplumber, openpyxl, pandas)...
+%PY_CMD% -c "import fitz, pdfplumber, openpyxl, pandas" >nul 2>&1
 if %errorlevel% equ 0 goto DEPS_OK
 
 echo.
 echo [!] One or more required packages are missing:
-%PY_CMD% -c "import importlib.util as u; [print(('    [OK]      ' if u.find_spec(p) else '    [MISSING] ') + p) for p in ['pdfplumber', 'openpyxl', 'pandas']]"
+%PY_CMD% -c "import importlib.util as u; [print(('    [OK]      ' if u.find_spec(p) else '    [MISSING] ') + p) for p in ['fitz', 'pdfplumber', 'openpyxl', 'pandas']]"
 echo.
 set /p INSTALL_DEPS="Do you give permission to install the missing packages now? (Y/N): "
 if /i "!INSTALL_DEPS!"=="Y" (
     echo.
-    echo Installing dependencies (pdfplumber openpyxl pandas)...
-    %PY_CMD% -m pip install pdfplumber openpyxl pandas
+    echo Installing dependencies (pymupdf pdfplumber openpyxl pandas)...
+    %PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
     if !errorlevel! neq 0 (
         echo.
         echo [!] ERROR: Failed to install some dependencies.
-        echo Try manually running: %PY_CMD% -m pip install pdfplumber openpyxl pandas
+        echo Try manually running: %PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
         pause
         exit /b 1
     )
@@ -123,7 +123,7 @@ if /i "!INSTALL_DEPS!"=="Y" (
 )
 
 :DEPS_OK
-echo [OK] All required packages (pdfplumber, openpyxl, pandas) are installed.
+echo [OK] All required packages (pymupdf, pdfplumber, openpyxl, pandas) are installed.
 echo.
 
 REM ------------------------------------------------------------

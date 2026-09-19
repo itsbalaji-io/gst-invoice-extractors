@@ -11,9 +11,21 @@ import pdfplumber
 
 
 def _text_from_pdf(pdf_path: str) -> str:
-    """Return all text from PDF pages concatenated with newlines."""
-    with pdfplumber.open(pdf_path) as pdf:
-        return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    """Return all text from PDF pages (PyMuPDF primary with pdfplumber fallback)."""
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        text = "\n".join(page.get_text() or "" for page in doc)
+        doc.close()
+        if text and len(text.strip()) > 30:
+            return text
+    except Exception:
+        pass
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    except Exception:
+        return ""
 
 
 def _first_match(patterns, text, flags=0):

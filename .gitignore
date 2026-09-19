@@ -6,6 +6,7 @@ __pycache__/
 # Invoices and Data Files (Personal / Financial data)
 *.pdf
 *.xlsx
+*.zip
 extracted_data/
 Indigo/
 Air_India/

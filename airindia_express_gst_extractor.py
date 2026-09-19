@@ -11,12 +11,31 @@ import pdfplumber
 def extract_invoice_data(pdf_path: str) -> dict:
     text = ""
     tables = []  # list of tables (list of list of strings)
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() or ""
-            page_tables = page.extract_tables()
-            if page_tables:
-                tables.extend(page_tables)
+    # Primary: PyMuPDF (fast)
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        text = "\n".join(page.get_text() or "" for page in doc)
+        for page in doc:
+            for t in page.find_tables():
+                tables.append(t.extract())
+        doc.close()
+    except Exception:
+        pass
+
+    # Fallback: pdfplumber if text or tables are missing
+    if not text.strip() or not tables:
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                if not text.strip():
+                    text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+                if not tables:
+                    for page in pdf.pages:
+                        page_tables = page.extract_tables()
+                        if page_tables:
+                            tables.extend(page_tables)
+        except Exception:
+            pass
 
     # Initialize result
     result = {
