@@ -35,28 +35,37 @@ goto PYTHON_OK
 echo.
 echo [!] ERROR: Python is not detected in your system PATH.
 echo.
-set /p INSTALL_PY="Would you like to install Python 3.12 automatically via winget? (Y/N): "
-if /i "!INSTALL_PY!"=="Y" (
-    echo.
-    echo Installing Python 3.12...
-    winget install --id Python.Python.3.12 -e --accept-package-agreements --accept-source-agreements
-    if !errorlevel! equ 0 (
-        echo [OK] Python installed successfully. Please restart this batch file.
-        pause
-        exit /b 0
-    ) else (
-        echo [!] Automated installation failed or winget is not available.
-        echo Opening official Python download page in your browser...
-        start https://www.python.org/downloads/
-        echo Note: Please make sure to check "Add Python to PATH" during installation.
-        pause
-        exit /b 1
-    )
-) else (
-    echo Python is required to run the extraction tools. Exiting.
-    pause
-    exit /b 1
-)
+set "INSTALL_PY=Y"
+set /p "INSTALL_PY=Would you like to install Python 3.12 automatically via winget? (Y/N) [Default: Y]: "
+set "INSTALL_PY=%INSTALL_PY: =%"
+
+if /i "%INSTALL_PY%"=="Y" goto DO_INSTALL_PY
+if /i "%INSTALL_PY%"=="YES" goto DO_INSTALL_PY
+if /i "%INSTALL_PY%"=="" goto DO_INSTALL_PY
+
+echo.
+echo Python is required to run the extraction tools. Exiting.
+pause
+exit /b 1
+
+:DO_INSTALL_PY
+echo.
+echo Installing Python 3.12 via winget...
+winget install --id Python.Python.3.12 -e --accept-package-agreements --accept-source-agreements
+if %errorlevel% neq 0 goto PY_WINGET_FAILED
+
+echo [OK] Python installed successfully. Please restart this batch file.
+pause
+exit /b 0
+
+:PY_WINGET_FAILED
+echo.
+echo [!] Automated installation failed or winget is not available.
+echo Opening official Python download page in your browser...
+start https://www.python.org/downloads/
+echo Note: Please make sure to check "Add Python to PATH" during installation.
+pause
+exit /b 1
 
 :PYTHON_OK
 for /f "tokens=2" %%a in ('%PY_CMD% --version 2^>^&1') do set "PY_VER=%%a"
@@ -72,16 +81,25 @@ if %errorlevel% equ 0 goto PIP_OK
 
 echo.
 echo [!] WARNING: pip was not detected.
-set /p INSTALL_PIP="Would you like to install/repair pip now? (Y/N): "
-if /i "!INSTALL_PIP!"=="Y" (
-    %PY_CMD% -m ensurepip --upgrade
-    if !errorlevel! neq 0 (
-        echo [!] Failed to configure pip. Exiting.
-        pause
-        exit /b 1
-    )
-) else (
-    echo Cannot install required packages without pip. Exiting.
+set "INSTALL_PIP=Y"
+set /p "INSTALL_PIP=Would you like to install/repair pip now? (Y/N) [Default: Y]: "
+set "INSTALL_PIP=%INSTALL_PIP: =%"
+
+if /i "%INSTALL_PIP%"=="Y" goto DO_INSTALL_PIP
+if /i "%INSTALL_PIP%"=="YES" goto DO_INSTALL_PIP
+if /i "%INSTALL_PIP%"=="" goto DO_INSTALL_PIP
+
+echo.
+echo Cannot install required packages without pip. Exiting.
+pause
+exit /b 1
+
+:DO_INSTALL_PIP
+echo.
+echo Configuring pip via ensurepip...
+%PY_CMD% -m ensurepip --upgrade
+if %errorlevel% neq 0 (
+    echo [!] Failed to configure pip. Exiting.
     pause
     exit /b 1
 )
@@ -93,7 +111,7 @@ echo.
 REM ------------------------------------------------------------
 REM [3/4] Check and Prompt for Required Python Libraries
 REM ------------------------------------------------------------
-echo [Step 3/4] Checking required dependencies (pymupdf, pdfplumber, openpyxl, pandas)...
+echo [Step 3/4] Checking required dependencies...
 %PY_CMD% -c "import fitz, pdfplumber, openpyxl, pandas" >nul 2>&1
 if %errorlevel% equ 0 goto DEPS_OK
 
@@ -101,29 +119,44 @@ echo.
 echo [!] One or more required packages are missing:
 %PY_CMD% -c "import importlib.util as u; [print(('    [OK]      ' if u.find_spec(p) else '    [MISSING] ') + p) for p in ['fitz', 'pdfplumber', 'openpyxl', 'pandas']]"
 echo.
-set /p INSTALL_DEPS="Do you give permission to install the missing packages now? (Y/N): "
-if /i "!INSTALL_DEPS!"=="Y" (
-    echo.
-    echo Installing dependencies (pymupdf pdfplumber openpyxl pandas)...
-    %PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
-    if !errorlevel! neq 0 (
-        echo.
-        echo [!] ERROR: Failed to install some dependencies.
-        echo Try manually running: %PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
-        pause
-        exit /b 1
-    )
-    echo [OK] Dependencies installed successfully!
-    goto DEPS_OK
-) else (
-    echo.
-    echo [!] Installation cancelled. The script cannot extract invoice data without dependencies.
-    pause
-    exit /b 1
-)
+set "INSTALL_DEPS=Y"
+set /p "INSTALL_DEPS=Do you give permission to install the missing packages now? (Y/N) [Default: Y]: "
+set "INSTALL_DEPS=%INSTALL_DEPS: =%"
+
+if /i "%INSTALL_DEPS%"=="Y" goto DO_INSTALL_DEPS
+if /i "%INSTALL_DEPS%"=="YES" goto DO_INSTALL_DEPS
+if /i "%INSTALL_DEPS%"=="" goto DO_INSTALL_DEPS
+
+echo.
+echo [!] Installation cancelled. The script cannot extract invoice data without dependencies.
+echo Press any key to exit...
+pause >nul
+exit /b 1
+
+:DO_INSTALL_DEPS
+echo.
+echo ============================================================
+echo Installing missing libraries via pip...
+echo ============================================================
+%PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
+if %errorlevel% neq 0 goto INSTALL_FAILED
+
+echo.
+echo [OK] All dependencies installed successfully!
+goto DEPS_OK
+
+:INSTALL_FAILED
+echo.
+echo [!] ERROR: Failed to install some dependencies.
+echo Please check your internet connection or run manually:
+echo   %PY_CMD% -m pip install pymupdf pdfplumber openpyxl pandas
+echo.
+echo Press any key to exit...
+pause >nul
+exit /b 1
 
 :DEPS_OK
-echo [OK] All required packages (pymupdf, pdfplumber, openpyxl, pandas) are installed.
+echo [OK] All required packages are installed and ready.
 echo.
 
 REM ------------------------------------------------------------
