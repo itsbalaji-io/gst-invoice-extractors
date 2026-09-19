@@ -182,6 +182,12 @@ if exist "%SCRIPT_DIR%Air_India" (
     echo Notice: Air_India folder not found, skipping.
 )
 
+if exist "%SCRIPT_DIR%SpiceJet" (
+    echo.
+    echo --- Processing SpiceJet Invoices ---
+    %PY_CMD% "%SCRIPT_DIR%spicejet_gst_invoice_extractor.py"
+)
+
 if "%USER_CHOICE%"=="3" goto FINISHED
 
 :DO_UNIFIED
@@ -216,6 +222,9 @@ if exist "%SCRIPT_DIR%airindia_express_invoices_extracted.xlsx" (
 )
 if exist "%SCRIPT_DIR%airindia_invoices_extracted.xlsx" (
     echo   [+] airindia_invoices_extracted.xlsx
+)
+if exist "%SCRIPT_DIR%spicejet_invoices_extracted.xlsx" (
+    echo   [+] spicejet_invoices_extracted.xlsx
 )
 if exist "%SCRIPT_DIR%extracted_data" (
     echo   [+] extracted_data\ - Consolidated Excel and JSON reports

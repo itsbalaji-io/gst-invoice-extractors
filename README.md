@@ -21,11 +21,7 @@ A comprehensive suite of Python scripts and automation utilities to classify, so
 - **`indigo_gst_invoice_extractor.py`**: High-accuracy parser for IndiGo GST invoices and credit notes. Outputs to `indigo_invoices_extracted.xlsx`.
 - **`airindia_express_gst_extractor.py`**: Specialized parser for Air India Express GST invoices. Outputs to `airindia_express_invoices_extracted.xlsx`.
 - **`airindia_gst_extractor.py`**: Specialized parser for Air India (Ltd) GST invoices and debit notes. Outputs to `airindia_invoices_extracted.xlsx`.
-
-### 5. Archive Folder
-- **`expired/`**: Contains legacy and inactive files:
-  - `separate_indigo_invoices.py` (superseded by `sort_airline_invoices.py`)
-  - `spicejet_gst_invoice_extractor.py` (archived for future use if SpiceJet invoices are added)
+- **`spicejet_gst_invoice_extractor.py`**: Specialized parser for SpiceJet GST invoices. Outputs to `spicejet_invoices_extracted.xlsx`.
 
 ## 🚀 Setup & Installation
 
@@ -53,6 +49,7 @@ python sort_airline_invoices.py
 python indigo_gst_invoice_extractor.py
 python airindia_express_gst_extractor.py
 python airindia_gst_extractor.py
+python spicejet_gst_invoice_extractor.py
 ```
 
 4. **Run unified multi-airline summary (outputs to `extracted_data/`)**:
